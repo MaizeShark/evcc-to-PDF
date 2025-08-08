@@ -127,7 +127,7 @@ def erstelle_pdf(df, year, month):
     html_string = template.render(
         absender=ABSENDER_INFO,
         erstellungs_datum=datetime.now().strftime('%d.%m.%Y'),
-        zeitraum=f"{locale.nl_langinfo(locale.MON_01 + month - 1)} {year}",
+        zeitraum=f"{locale.nl_langinfo(locale.MON_1 + month - 1)} {year}",
         ladungen=df_formatiert.to_dict('records'),
         gesamt_energie=locale.format_string('%.3f', gesamt_energie, True),
         gesamt_preis=locale.format_string('%.2f', gesamt_preis, True)
@@ -154,7 +154,7 @@ def main():
     result = erstelle_pdf(df, year, month)
     if result:
         pdf_pfad, pdf_dateiname = result
-        monats_name = locale.nl_langinfo(locale.MON_01 + month - 1)
+        monats_name = locale.nl_langinfo(locale.MON_1 + month - 1)
         subject = f"Ladekostenübersicht für {monats_name} {year}"
         body = f"Anbei die automatische Ladekostenübersicht für {monats_name} {year}."
         sende_email_mit_anhang(subject, body, pdf_pfad)
