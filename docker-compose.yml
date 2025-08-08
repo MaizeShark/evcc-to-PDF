@@ -1,0 +1,7 @@
+services:
+  reporter:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./pdfs:/output
