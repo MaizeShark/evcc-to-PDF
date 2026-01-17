@@ -23,6 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # --- CONFIGURATION ---
 @dataclass
 class Config:
@@ -55,6 +56,7 @@ class Config:
             locale=os.environ.get('LOCALE', 'en_US.UTF-8')
         )
 
+
 class ReportGenerator:
     def __init__(self, config: Config):
         self.config = config
@@ -76,7 +78,7 @@ class ReportGenerator:
     def fetch_data(self, year: int, month: int) -> Optional[List[Dict[str, Any]]]:
         api_url = f"{self.config.evcc_url}/api/sessions?lang=en&year={year}&month={month}"
         session = requests.Session()
-        
+
         if self.config.evcc_password:
             try:
                 login_url = f"{self.config.evcc_url}/api/auth/login"
@@ -96,14 +98,14 @@ class ReportGenerator:
             return response.json()
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error while fetching data: {e}")
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             logger.error(f"Connection error: Could not reach EVCC at '{self.config.evcc_url}'.")
         return None
 
     def process_data(self, json_data: List[Dict[str, Any]]) -> pd.DataFrame:
         if not json_data:
             return pd.DataFrame()
-        
+
         df = pd.DataFrame(json_data)
         mapping = {
             'created': 'Start Time',
@@ -113,7 +115,7 @@ class ReportGenerator:
             'chargedEnergy': 'Energy (kWh)',
             'price': 'Price'
         }
-        
+
         # Check for missing columns and handle gracefully
         available_cols = [col for col in mapping.keys() if col in df.columns]
         if not available_cols:
@@ -121,22 +123,39 @@ class ReportGenerator:
             return pd.DataFrame()
 
         df = df.rename(columns=mapping)
-        
+
         # Convert date columns
         for col in ['Start Time', 'End Time']:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col])
-        
+
         # Calculate duration
         if 'Start Time' in df.columns and 'End Time' in df.columns:
             df['Charging Duration'] = df['End Time'] - df['Start Time']
             df['Charging Duration'] = df['Charging Duration'].apply(
                 lambda td: f"{td.components.hours}h {td.components.minutes}m" if pd.notnull(td) else "N/A"
             )
-        
+
         relevant_columns = list(mapping.values()) + ['Charging Duration']
         existing_columns = [col for col in relevant_columns if col in df.columns]
         return df[existing_columns]
+
+    def _format_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_formatted = df.copy()
+        if 'Start Time' in df_formatted.columns:
+            df_formatted['Start Time'] = df_formatted['Start Time'].dt.strftime('%Y-%m-%d %H:%M')
+        if 'End Time' in df_formatted.columns:
+            df_formatted['End Time'] = df_formatted['End Time'].dt.strftime('%Y-%m-%d %H:%M')
+
+        if 'Energy (kWh)' in df_formatted.columns:
+            df_formatted['Energy (kWh)'] = df_formatted['Energy (kWh)'].apply(
+                lambda x: locale.format_string('%.3f', x, True) if pd.notnull(x) else ""
+            )
+        if 'Price' in df_formatted.columns:
+            df_formatted['Price'] = df_formatted['Price'].apply(
+                lambda x: locale.format_string('%.2f', x, True) if pd.notnull(x) else ""
+            )
+        return df_formatted
 
     def generate_pdf(self, df: pd.DataFrame, year: int, month: int) -> Tuple[Optional[str], Optional[str]]:
         if df.empty:
@@ -145,7 +164,7 @@ class ReportGenerator:
 
         if 'Start Time' in df.columns:
             df = df.sort_values(by='Start Time', ascending=True).reset_index(drop=True)
-        
+
         env = Environment(loader=FileSystemLoader('.'))
         try:
             template = env.get_template(self.template_file)
@@ -153,16 +172,7 @@ class ReportGenerator:
             logger.error(f"Failed to load template '{self.template_file}': {e}")
             return None, None
 
-        df_formatted = df.copy()
-        if 'Start Time' in df_formatted.columns:
-            df_formatted['Start Time'] = df_formatted['Start Time'].dt.strftime('%Y-%m-%d %H:%M')
-        if 'End Time' in df_formatted.columns:
-            df_formatted['End Time'] = df_formatted['End Time'].dt.strftime('%Y-%m-%d %H:%M')
-        
-        if 'Energy (kWh)' in df_formatted.columns:
-            df_formatted['Energy (kWh)'] = df_formatted['Energy (kWh)'].apply(lambda x: locale.format_string('%.3f', x, True) if pd.notnull(x) else "")
-        if 'Price' in df_formatted.columns:
-            df_formatted['Price'] = df_formatted['Price'].apply(lambda x: locale.format_string('%.2f', x, True) if pd.notnull(x) else "")
+        df_formatted = self._format_dataframe(df)
 
         total_energy = df['Energy (kWh)'].sum() if 'Energy (kWh)' in df.columns else 0
         total_price = df['Price'].sum() if 'Price' in df.columns else 0
@@ -191,7 +201,7 @@ class ReportGenerator:
         pdf_filename = f"ChargingCostSummary_{year}-{month:02d}.pdf"
         os.makedirs(self.config.output_folder, exist_ok=True)
         pdf_path = os.path.join(self.config.output_folder, pdf_filename)
-        
+
         try:
             HTML(string=html_string).write_pdf(pdf_path)
             logger.info(f"PDF file successfully created: '{pdf_path}'")
@@ -201,7 +211,12 @@ class ReportGenerator:
             return None, None
 
     def send_email(self, subject: str, body: str, attachment_path: str):
-        if not all([self.config.sender_email, self.config.sender_password, self.config.recipient_email, self.config.smtp_server]):
+        if not all([
+            self.config.sender_email,
+            self.config.sender_password,
+            self.config.recipient_email,
+            self.config.smtp_server
+        ]):
             logger.warning("Email credentials or server details are incomplete. Email will not be sent.")
             return
 
@@ -242,7 +257,7 @@ class ReportGenerator:
             month = month or last_day_previous_month.month
 
         logger.info(f"--- Starting report for {month}/{year} ---")
-        
+
         json_data = self.fetch_data(year, month)
         if not json_data:
             logger.error("Could not fetch data. Terminating.")
@@ -256,12 +271,13 @@ class ReportGenerator:
                 month_name = locale.nl_langinfo(locale.MON_1 + month - 1)
             except AttributeError:
                 month_name = datetime(year, month, 1).strftime('%B')
-                
+
             subject = f"Charging Cost Summary for {month_name} {year}"
             body = f"Attached is the automatic charging cost summary for {month_name} {year}."
             self.send_email(subject, body, pdf_path)
-        
+
         logger.info("--- Script finished ---")
+
 
 def main():
     parser = argparse.ArgumentParser(description='Generate EVCC charging report PDF.')
@@ -272,6 +288,7 @@ def main():
     config = Config.from_env()
     generator = ReportGenerator(config)
     generator.run(year=args.year, month=args.month)
+
 
 if __name__ == '__main__':
     main()
