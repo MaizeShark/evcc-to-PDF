@@ -38,11 +38,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Suppress specific logs from libraries
-logging.getLogger("weasyprint").setLevel(logging.WARNING)
-logging.getLogger("fontTools").setLevel(logging.WARNING)
-logging.getLogger("PIL").setLevel(logging.WARNING)  # Suppress PIL logs
-logging.getLogger("pdfminer").setLevel(logging.WARNING)  # Suppress pdfminer logs
+logging.getLogger('fontTools.subset').setLevel(logging.WARN)
 
 
 # --- CONFIGURATION ---
