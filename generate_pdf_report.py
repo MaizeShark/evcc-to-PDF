@@ -23,6 +23,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Suppress specific logs from libraries
+logging.getLogger("weasyprint").setLevel(logging.WARNING)
+logging.getLogger("fontTools").setLevel(logging.WARNING)
+
 
 # --- CONFIGURATION ---
 @dataclass
