@@ -1,7 +1,7 @@
-# 1. Basis-Image: Python auf Debian-Basis
+# 1. Base image: Python on Debian base
 FROM python:3.11-slim-bookworm
 
-# 2. System-Abhängigkeiten für WeasyPrint und deutsche Locale installieren
+# 2. Install system dependencies for WeasyPrint and locales
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libharfbuzz0b \
@@ -9,27 +9,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Deutsche Locale generieren und als Standard setzen
-RUN sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
+# 3. Set default locale to be configurable via build argument
+ARG LOCALE=de_DE.UTF-8
+RUN sed -i -e "s/# $LOCALE UTF-8/$LOCALE UTF-8/" /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
-    update-locale LANG=de_DE.UTF-8
-ENV LANG de_DE.UTF-8
-ENV LANGUAGE de_DE:de
-ENV LC_ALL de_DE.UTF-8
+    update-locale LANG=$LOCALE
+ENV LANG $LOCALE
+ENV LANGUAGE ${LOCALE%.*}:${LOCALE%_*}
+ENV LC_ALL $LOCALE
 
-# 4. Arbeitsverzeichnis im Container erstellen und festlegen
+# 4. Create and set the working directory in the container
 WORKDIR /app
 
-# 5. Python-Abhängigkeiten installieren
+# 5. Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 6. Anwendungsdateien in den Container kopieren
-COPY vorlage.html .
-COPY pdf_erstellen_auto.py .
+# 6. Copy application files into the container
+COPY template_*.html .
+COPY generate_pdf_report.py .
 
-# 7. Erstelle einen Ordner für die Ausgabe
-RUN mkdir /output
-
-# 8. Befehl, der beim Starten des Containers ausgeführt wird
-CMD ["python3", "pdf_erstellen_auto.py"]
+# 8. Command to execute when starting the container
+CMD ["python3", "generate_pdf_report.py"]

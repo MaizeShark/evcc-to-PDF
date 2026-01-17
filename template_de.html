@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Ladekostenübersicht</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 10pt;
+            color: #333;
+        }
+        h1 {
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 10px;
+        }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .address {
+            line-height: 1.4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #003366;
+            background-color: #f8faff;
+            width: 40%;
+            float: right;
+        }
+        .summary h2 {
+            margin-top: 0;
+            color: #003366;
+        }
+        .summary p {
+            font-size: 12pt;
+            margin: 5px 0;
+        }
+        .summary strong {
+            display: inline-block;
+            width: 150px;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10pt;
+            color: #555;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+        }
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        @page {
+            @bottom-center {
+                content: "Seite " counter(page) " von " counter(pages);
+                font-size: 10pt;
+                font-family: sans-serif;
+                font-weight: 300;
+                color: #333;
+                padding-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-info">
+        <div class="address">
+            <strong>{{ sender.name }}</strong><br>
+            {{ sender.street }}<br>
+            {{ sender.city }}
+        </div>
+        <div>
+            <strong>Datum:</strong> {{ creation_date }}
+        </div>
+    </div>
+
+    <h1>Ladekostenübersicht</h1>
+    <p>Zeitraum: {{ period }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Startzeit</th>
+                <th>Endzeit</th>
+                <th>Ladepunkt</th>
+                <th>Fahrzeug</th>
+                <th>Energie (kWh)</th>
+                <th>Ladedauer</th>
+                <th>Preis (€)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for charge in charges %}
+            <tr>
+                <td>{{ charge['Start Time'] }}</td>
+                <td>{{ charge['End Time'] }}</td>
+                <td>{{ charge['Charging Point'] }}</td>
+                <td>{{ charge['Vehicle'] }}</td>
+                <td style="text-align: right;">{{ charge['Energy (kWh)'] }}</td>
+                <td>{{ charge['Charging Duration'] }}</td>
+                <td style="text-align: right;">{{ charge.Price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <h2>Zusammenfassung</h2>
+        <p><strong>Gesamtenergie:</strong> {{ total_energy }} kWh</p>
+        <p><strong>Gesamtkosten:</strong> {{ total_price }} €</p>
+    </div>
+
+</body>
+</html>

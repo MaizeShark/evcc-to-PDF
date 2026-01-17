@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ladekostenübersicht</title>
+    <title>Charging Cost Summary</title>
     <style>
         body {
             font-family: sans-serif;
@@ -56,14 +56,19 @@
             display: inline-block;
             width: 150px;
         }
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8pt;
-            color: #888;
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        @page {
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10pt;
+                font-family: sans-serif;
+                font-weight: 300;
+                color: #333;
+                padding-top: 5px;
+            }
         }
     </style>
 </head>
@@ -71,53 +76,49 @@
 
     <div class="header-info">
         <div class="address">
-            <strong>{{ absender.name }}</strong><br>
-            {{ absender.strasse }}<br>
-            {{ absender.plz_ort }}
+            <strong>{{ sender.name }}</strong><br>
+            {{ sender.street }}<br>
+            {{ sender.city }}
         </div>
         <div>
-            <strong>Datum:</strong> {{ erstellungs_datum }}
+            <strong>Date:</strong> {{ creation_date }}
         </div>
     </div>
 
-    <h1>Ladekostenübersicht</h1>
-    <p>Zeitraum: {{ zeitraum }}</p>
+    <h1>Charging Cost Summary</h1>
+    <p>Period: {{ period }}</p>
 
     <table>
         <thead>
             <tr>
-                <th>Startzeit</th>
-                <th>Endzeit</th>
-                <th>Ladepunkt</th>
-                <th>Fahrzeug</th>
-                <th>Energie (kWh)</th>
-                <th>Ladedauer</th>
-                <th>Preis (€)</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Charging Point</th>
+                <th>Vehicle</th>
+                <th>Energy (kWh)</th>
+                <th>Charging Duration</th>
+                <th>Price (€)</th>
             </tr>
         </thead>
         <tbody>
-            {% for ladung in ladungen %}
+            {% for charge in charges %}
             <tr>
-                <td>{{ ladung.Startzeit }}</td>
-                <td>{{ ladung.Endzeit }}</td>
-                <td>{{ ladung.Ladepunkt }}</td>
-                <td>{{ ladung.Fahrzeug }}</td>
-                <td style="text-align: right;">{{ ladung['Energie (kWh)'] }}</td>
-                <td>{{ ladung.Ladedauer }}</td>
-                <td style="text-align: right;">{{ ladung.Preis }}</td>
+                <td>{{ charge['Start Time'] }}</td>
+                <td>{{ charge['End Time'] }}</td>
+                <td>{{ charge['Charging Point'] }}</td>
+                <td>{{ charge['Vehicle'] }}</td>
+                <td style="text-align: right;">{{ charge['Energy (kWh)'] }}</td>
+                <td>{{ charge['Charging Duration'] }}</td>
+                <td style="text-align: right;">{{ charge.Price }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
     <div class="summary">
-        <h2>Zusammenfassung</h2>
-        <p><strong>Gesamtenergie:</strong> {{ gesamt_energie }} kWh</p>
-        <p><strong>Gesamtkosten:</strong> {{ gesamt_preis }} €</p>
-    </div>
-
-    <div class="footer">
-        Seite 1 von 1
+        <h2>Summary</h2>
+        <p><strong>Total Energy:</strong> {{ total_energy }} kWh</p>
+        <p><strong>Total Cost:</strong> {{ total_price }} €</p>
     </div>
 
 </body>

@@ -4,4 +4,4 @@ services:
     env_file:
       - .env
     volumes:
-      - ./pdfs:/output
+      - ./pdfs:/app/output
