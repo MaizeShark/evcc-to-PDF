@@ -14,9 +14,9 @@ ARG LOCALE=de_DE.UTF-8
 RUN sed -i -e "s/# $LOCALE UTF-8/$LOCALE UTF-8/" /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=$LOCALE
-ENV LANG $LOCALE
-ENV LANGUAGE ${LOCALE%.*}:${LOCALE%_*}
-ENV LC_ALL $LOCALE
+ENV LANG=$LOCALE
+ENV LANGUAGE=${LOCALE%.*}:${LOCALE%_*}
+ENV LC_ALL=$LOCALE
 
 # 4. Create and set the working directory in the container
 WORKDIR /app
