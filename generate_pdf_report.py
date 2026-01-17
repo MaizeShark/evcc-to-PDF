@@ -14,18 +14,35 @@ import logging
 import argparse
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Tuple
+import sys
 
 # --- LOGGING SETUP ---
+# Update logging configuration to send INFO logs to stdout and others to stderr
+class InfoFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno == logging.INFO
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_handler.addFilter(InfoFilter())
+
+stderr_handler = logging.StreamHandler(sys.stderr)
+stderr_handler.setLevel(logging.WARNING)
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[stdout_handler, stderr_handler]
 )
+
 logger = logging.getLogger(__name__)
 
 # Suppress specific logs from libraries
 logging.getLogger("weasyprint").setLevel(logging.WARNING)
 logging.getLogger("fontTools").setLevel(logging.WARNING)
+logging.getLogger("PIL").setLevel(logging.WARNING)  # Suppress PIL logs
+logging.getLogger("pdfminer").setLevel(logging.WARNING)  # Suppress pdfminer logs
 
 
 # --- CONFIGURATION ---
