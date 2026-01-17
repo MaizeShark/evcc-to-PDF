@@ -16,7 +16,7 @@ This project automates the generation of PDF charging reports from your [EVCC](h
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/MaizeShark/evcc-to-PDF
     cd evcc-to-PDF
     ```
 
@@ -31,7 +31,7 @@ This project automates the generation of PDF charging reports from your [EVCC](h
     
     | Variable | Description | Default |
     |----------|-------------|---------|
-    | `EVCC_URL` | URL of your EVCC instance | `http://192.168.178.16:7070` |
+    | `EVCC_URL` | URL of your EVCC instance | `http://localhost:7070` |
     | `EVCC_PASSWORD` | Password for EVCC (if authentication is enabled) | *(empty)* |
     | `SMTP_SERVER` | SMTP Server address | *(Required for email)* |
     | `SMTP_PORT` | SMTP Server port | `587` |
@@ -75,4 +75,30 @@ If you wish to run the script without Docker (e.g., for development):
 
 ## Customization
 
-- **Templates:** The script uses `vorlage_de.html` by default. You can edit this file to change the PDF layout.
+- **Templates:** The script uses `template_de.html` (or `template_en.html`) by default depending on locale. You can edit these files to change the PDF layout.
+
+## Automation
+
+You can set up this tool to run automatically on the 1st of every month to generate the report for the previous month.
+
+### Option 1: Automatic Setup (Recommended)
+
+Run the included setup script to automatically add a cron job to your system:
+
+```bash
+./setup_cron.sh
+```
+
+This will configure a job to run at **02:00 AM on the 1st of every month**.
+
+### Option 2: Manual Cron Setup
+
+1.  Open your crontab:
+    ```bash
+    crontab -e
+    ```
+
+2.  Add the following line (adjust the path to your installation):
+    ```cron
+    0 2 1 * * cd /path/to/evcc-to-PDF && docker-compose up >> cron.log 2>&1
+    ```
