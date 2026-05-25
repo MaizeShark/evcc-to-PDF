@@ -38,11 +38,15 @@
         }
         .summary {
             margin-top: 30px;
+            margin-bottom: 15mm;
+            margin-left: auto;
+            margin-right: 0;
             padding: 15px;
             border: 1px solid #003366;
             background-color: #f8faff;
             width: 40%;
-            float: right;
+            box-sizing: border-box;
+            page-break-inside: avoid;
         }
         .summary h2 {
             margin-top: 0;
@@ -68,8 +72,8 @@
             padding-top: 5px;
         }
         @page {
-            size: A4;
-            margin: 20mm;
+            size: A4 {{ page_orientation|default('portrait') }};
+            margin: 20mm 20mm 28mm 20mm;
         }
         @page {
             @bottom-center {
@@ -102,25 +106,13 @@
     <table>
         <thead>
             <tr>
-                <th>Startzeit</th>
-                <th>Endzeit</th>
-                <th>Ladepunkt</th>
-                <th>Fahrzeug</th>
-                <th>Energie (kWh)</th>
-                <th>Ladedauer</th>
-                <th>Preis (€)</th>
+                {% for c in columns %}<th>{{ c.label }}</th>{% endfor %}
             </tr>
         </thead>
         <tbody>
             {% for charge in charges %}
             <tr>
-                <td>{{ charge['Start Time'] }}</td>
-                <td>{{ charge['End Time'] }}</td>
-                <td>{{ charge['Charging Point'] }}</td>
-                <td>{{ charge['Vehicle'] }}</td>
-                <td style="text-align: right;">{{ charge['Energy (kWh)'] }}</td>
-                <td>{{ charge['Charging Duration'] }}</td>
-                <td style="text-align: right;">{{ charge.Price }}</td>
+                {% for c in columns %}<td{% if c.align == 'right' %} style="text-align: right;"{% endif %}>{{ charge[c.id] }}</td>{% endfor %}
             </tr>
             {% endfor %}
         </tbody>
