@@ -6,6 +6,8 @@ from weasyprint import HTML
 from datetime import datetime, timedelta
 import locale
 import smtplib
+import ssl
+from email.utils import formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -106,6 +108,9 @@ class Config:
     columns: List[str] = field(default_factory=lambda: list(DEFAULT_COLUMNS))
     filter_vehicles: List[str] = field(default_factory=list)
     filter_loadpoints: List[str] = field(default_factory=list)
+    smtp_username: Optional[str] = None  # login user; falls back to sender_email
+    smtp_from_name: Optional[str] = None  # display name in From header; falls back to sender_name
+    smtp_security: str = 'auto'  # auto | starttls | ssl | none (auto: ssl on port 465, else starttls)
 
     @classmethod
     def from_env(cls) -> 'Config':
@@ -123,6 +128,9 @@ class Config:
             sender_city=os.environ.get('SENDER_CITY', '12345 Sample City'),
             locale=os.environ.get('LOCALE', 'en_US.UTF-8'),
             columns=columns_env or list(DEFAULT_COLUMNS),
+            smtp_username=os.environ.get('SMTP_USERNAME') or None,
+            smtp_from_name=os.environ.get('SMTP_FROM_NAME') or None,
+            smtp_security=os.environ.get('SMTP_SECURITY', 'auto').strip().lower(),
             filter_vehicles=_split_csv(os.environ.get('FILTER_VEHICLES', '')),
             filter_loadpoints=_split_csv(os.environ.get('FILTER_LOADPOINTS', '')),
         )
@@ -375,7 +383,8 @@ class ReportGenerator:
 
         logger.info(f"Preparing email for {self.config.recipient_email}...")
         msg = MIMEMultipart()
-        msg['From'] = self.config.sender_email
+        from_name = self.config.smtp_from_name or self.config.sender_name
+        msg['From'] = formataddr((from_name, self.config.sender_email)) if from_name else self.config.sender_email
         msg['To'] = self.config.recipient_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
@@ -392,11 +401,20 @@ class ReportGenerator:
             return
 
         try:
-            server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
-            server.starttls()
-            server.login(self.config.sender_email, self.config.sender_password)
-            server.send_message(msg)
-            server.quit()
+            security = self.config.smtp_security
+            if security == 'auto':
+                security = 'ssl' if self.config.smtp_port == 465 else 'starttls'
+            if security == 'ssl':
+                server = smtplib.SMTP_SSL(self.config.smtp_server, self.config.smtp_port,
+                                          context=ssl.create_default_context())
+            else:
+                server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
+                if security == 'starttls':
+                    server.starttls(context=ssl.create_default_context())
+            with server:
+                server.login(self.config.smtp_username or self.config.sender_email,
+                             self.config.sender_password)
+                server.send_message(msg)
             logger.info("Email sent successfully.")
         except Exception as e:
             logger.error(f"Error while sending the email: {e}")

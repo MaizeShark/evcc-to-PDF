@@ -37,6 +37,9 @@ This project automates the generation of PDF charging reports from your [EVCC](h
     | `EVCC_PASSWORD` | Password for EVCC (if authentication is enabled) | *(empty)* |
     | `SMTP_SERVER` | SMTP Server address | *(Required for email)* |
     | `SMTP_PORT` | SMTP Server port | `587` |
+    | `SMTP_SECURITY` | `auto` (SMTPS on port 465, STARTTLS otherwise), `starttls`, `ssl`, or `none` | `auto` |
+    | `SMTP_USERNAME` | SMTP login username | `SENDER_EMAIL` |
+    | `SMTP_FROM_NAME` | Display name in the email From header | `SENDER_NAME` |
     | `SENDER_EMAIL` | Email address sending the report | *(Required for email)* |
     | `SENDER_PASSWORD` | Password for the sender email | *(Required for email)* |
     | `RECIPIENT_EMAIL` | Recipient email address | *(Required for email)* |
